@@ -1,12 +1,13 @@
 '''
 Genport Portfolio Optimize
+## 추후 개발 예정
 '''
 
 # -*- coding: utf-8 -*-
 
 ## import Packages
-import pandas as pd     # 엑셀처럼 행과 열을 가진 DATA를 이용할 수 있게 해주는 패키지
-import numpy as np     # 수학과학 연산을 위한 패키지 
+import pandas as pd                 # 엑셀처럼 행과 열을 가진 DATA를 이용할 수 있게 해주는 패키지
+import numpy as np                  # 수학과학 연산을 위한 패키지 
 import matplotlib.pyplot as plt     #그래프를 그릴때 쓰는 패키지
 import scipy.optimize as sco
 import scipy.interpolate as sci
