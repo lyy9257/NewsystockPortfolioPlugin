@@ -24,6 +24,10 @@ class Opt_portfolio():
 
     ## 준비
     def __init__(self):
+
+        '''
+        ## 프로토타입으로 2개 입력받아서 출력하게 만들었던것.
+
         self.filepath_first = "trade_history_daily_536928.csv"
         self.filepath_second = "trade_history_daily_556120.csv"
         
@@ -32,16 +36,39 @@ class Opt_portfolio():
 
         self.count = 2 ## Asset 갯수
         self.simulated_data = pd .DataFrame(columns = ['weights_A', 'weights_B', 'Profit', 'Vollity', 'Sharp Ratio'])
+        ''
 
-        
+        ## 포트폴리오의 Number를 입력받아 Array Type로 저장
+        self.portfolio_array = []
+
+
+    ## 시뮬레이션 위한 포트폴리오 입력
+    def read_portfolio(self, *portfolio_number):
+        self.portfolio_array = list[portfolio_number]
+        print("포트폴리오 갯수 : %d" %len(self.portfolio_array))
+
+        return True
+
+
     ## 수익률 데이터 전처리
     def preprocess_tradedata(self):
         ## empty data to store preprocessd data
         temp= pd.DataFrame()
         
+        '''
         ## merge profit data to analyze 
         temp['A'] = self.tradedata_first['총자산'].astype(int)	
         temp['B'] = self.tradedata_second['총자산'].astype(int)
+        '''
+        
+        ## store amount data to dataframe
+        for i in range(len(self.portfolio_array)):
+            portfolio_number = self.portfolio_array[i]
+            filepath = "trade_history_daily_%s.csv" %portfolio_numer 
+            tradedata = pd.read_csv(filepath, header=0)
+            temp['%s' %self.protfolio_array[i]] = tradedata['총자산'].astype(int)
+        
+        ## calculate profit data
         temp = np.log(temp/temp.shift(1))
 
         return temp
@@ -49,10 +76,14 @@ class Opt_portfolio():
 
     ## 시뮬레이션
     def random_portfolio_weight(self, data):
-        time = 100
-        
+        ## set simulate time
+        time = 1000
+
+        '''
         weights_a = np.zeros(time)
         weights_b = np.zeros(time)
+        '''
+        
         profits = np.zeros(time)
         vols = np.zeros(time)
         sharps = np.zeros(time)
@@ -61,16 +92,26 @@ class Opt_portfolio():
             weight = np.array(np.random.random(self.count)) 
             weight /= np.sum(weight)
 
+            '''
             weights_a[p] = weight[0]
             weights_b[p] = weight[1]
+            '''
+
+            for i in range(len(self.portfolio_array)):
+            
 
             profits[p] = np.sum((data.mean() * weight) * 365)
-            vols[p] = np.sqrt(np.dot(weight.T, np.dot(data.cov() * 252, weight)))
+            vols[p] = np.sqrt(np.dot(weight.T, np.dot(data.cov() * 365, weight)))
             sharps[p] = profits[p]/vols[p]            
 
         ## store simulated data
+        for i in range(len(self.portfolio_array)):
+        
+        '''
         self.simulated_data['weights_A'] = weights_a
         self.simulated_data['weights_B'] = weights_b
+        '''
+
         self.simulated_data['Profit'] = profits
         self.simulated_data['Vollity'] = vols
         self.simulated_data['Sharp_Ratio'] = sharps
