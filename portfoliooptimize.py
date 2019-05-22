@@ -24,49 +24,28 @@ class Opt_portfolio():
 
     ## 준비
     def __init__(self):
-
-        '''
-        ## 프로토타입으로 2개 입력받아서 출력하게 만들었던것.
-
-        self.filepath_first = "trade_history_daily_536928.csv"
-        self.filepath_second = "trade_history_daily_556120.csv"
-        
-        self.tradedata_first = pd.read_csv(self.filepath_first, header=0)
-        self.tradedata_second = pd.read_csv(self.filepath_second, header=0)
-
-        self.count = 2 ## Asset 갯수
-        self.simulated_data = pd .DataFrame(columns = ['weights_A', 'weights_B', 'Profit', 'Vollity', 'Sharp Ratio'])
-        ''
-
         ## 포트폴리오의 Number를 입력받아 Array Type로 저장
-        self.portfolio_array = []
+        self.portfolio_list = []
 
 
     ## 시뮬레이션 위한 포트폴리오 입력
-    def read_portfolio(self, *portfolio_number):
-        self.portfolio_array = list[portfolio_number]
-        print("포트폴리오 갯수 : %d" %len(self.portfolio_array))
+    def read_portfolio(self, *portfolio_number):      
+        self.portfolio_list = list(portfolio_number)[0].split()
 
-        return True
+        print("포트폴리오 갯수 : %d" %len(self.portfolio_list))
 
 
     ## 수익률 데이터 전처리
     def preprocess_tradedata(self):
         ## empty data to store preprocessd data
         temp= pd.DataFrame()
-        
-        '''
-        ## merge profit data to analyze 
-        temp['A'] = self.tradedata_first['총자산'].astype(int)	
-        temp['B'] = self.tradedata_second['총자산'].astype(int)
-        '''
-        
+       
         ## store amount data to dataframe
-        for i in range(len(self.portfolio_array)):
-            portfolio_number = self.portfolio_array[i]
-            filepath = "trade_history_daily_%s.csv" %portfolio_numer 
+        for i in range(len(self.portfolio_list)):
+            portfolio_number = self.portfolio_list[i]
+            filepath = "trade_history_daily_" + portfolio_number + '.csv'
             tradedata = pd.read_csv(filepath, header=0)
-            temp['%s' %self.protfolio_array[i]] = tradedata['총자산'].astype(int)
+            temp['%s' %self.portfolio_list[i]] = tradedata['총자산'].astype(int)
         
         ## calculate profit data
         temp = np.log(temp/temp.shift(1))
@@ -77,77 +56,89 @@ class Opt_portfolio():
     ## 시뮬레이션
     def random_portfolio_weight(self, data):
         ## set simulate time
-        time = 1000
+        time = 2500
+        columns_list = []
+
+        for i in range(len(self.portfolio_list)):
+            columns_list.append('weights_%s' %self.portfolio_list[i])
+
+        columns_list.append('profit')
+        columns_list.append('vollity')
+        columns_list.append('Sharp_Ratio')
 
         '''
-        weights_a = np.zeros(time)
-        weights_b = np.zeros(time)
+        포트폴리오 데이터셋이 N(1<N<6)이므로
+        Array에 적재시켜 Dataframe에 저장시킨다.
         '''
-        
-        profits = np.zeros(time)
-        vols = np.zeros(time)
-        sharps = np.zeros(time)
+      
+        dataframe_array = []
 
         for p in range (time):
-            weight = np.array(np.random.random(self.count)) 
-            weight /= np.sum(weight)
+
+            temp_array = []
 
             '''
             weights_a[p] = weight[0]
             weights_b[p] = weight[1]
             '''
 
-            for i in range(len(self.portfolio_array)):
+            weight = np.array(np.random.random(len(self.portfolio_list))) 
+            weight /= np.sum(weight)
+
+            for i in range(len(weight)):
+                temp_array.append(weight[i])
+                
+            profits = np.sum((data.mean() * weight) * 365)
+            vols = np.sqrt(np.dot(weight.T, np.dot(data.cov() * 365, weight)))
+            sharps = profits/vols
+
+            temp_array.append(profits)
+            temp_array.append(vols)
+            temp_array.append(sharps)
             
+            dataframe_array.append(temp_array)
 
-            profits[p] = np.sum((data.mean() * weight) * 365)
-            vols[p] = np.sqrt(np.dot(weight.T, np.dot(data.cov() * 365, weight)))
-            sharps[p] = profits[p]/vols[p]            
+        simulated_data = pd.DataFrame(dataframe_array, columns = columns_list)
+        simulated_data = simulated_data.sort_values(by='Sharp_Ratio', ascending=False)
 
-        ## store simulated data
-        for i in range(len(self.portfolio_array)):
-        
-        '''
-        self.simulated_data['weights_A'] = weights_a
-        self.simulated_data['weights_B'] = weights_b
-        '''
+        print('- - - - - - - - -')
+        print(simulated_data.head())
+        print('- - - - - - - - -')
 
-        self.simulated_data['Profit'] = profits
-        self.simulated_data['Vollity'] = vols
-        self.simulated_data['Sharp_Ratio'] = sharps
-
-        return self.simulated_data
- 
+        return simulated_data
 
     ## 그래프 작도
     def draw_graph_sharp_ratio(self, data):
 
         ## 그래프 작도
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(13,6), sharex=True)
-        data.plot(kind='scatter', ax=ax, x='Vollity', y='Profit', c='Sharp Ratio', marker='X', cmap='plasma')
-        plt.scatter(data['Vollity'], data['Profit'], c='red', s=5, edgecolors='black')
+        data.plot(kind='scatter', ax=ax, x='vollity', y='profit', c='Sharp_Ratio', marker='X', cmap='plasma')
+        plt.scatter(data['vollity'], data['profit'], c='red', s=5)
 
         ## 최대 Sharp Ratio에 따른 출력값 작성
-        max_sharp_ratio = data['Sharp_Ratio'].idxmax()
-        profit_max_SR = data.iloc[max_sharp_ratio].loc['Profit']
-        vol_max_SR = data.iloc[max_sharp_ratio].loc['Vollity']
+        max_sharp_ratio_index = data['Sharp_Ratio'].idxmax()
+        profit_max_SR = data.iloc[max_sharp_ratio_index].loc['profit']
+        vol_max_SR = data.iloc[max_sharp_ratio_index].loc['vollity']
+        
+        '''
         max_weight_A = data.iloc[max_sharp_ratio].loc['weights_A']
         max_weight_B = data.iloc[max_sharp_ratio].loc['weights_B']
-
-        plt.scatter(vol_max_SR, profit_max_SR, c='Blue', s=200, edgecolors='black')
+        '''
+            
+        plt.scatter(vol_max_SR, profit_max_SR, c='Blue', marker='*', s=200)
 
         ## 샤프비율 최대일때 수익률, 변동성 출력
-        print('Vollity : %.3f' % (vol_max_SR * 100))
-        print('Profit : %.3f' % (profit_max_SR * 100))
-        print('Sharp Ratio : %.3f' % data['Sharp_Ratio'].idxmax())
+        print("최대 샤프값 시뮬레이션 순번 : %d" %max_sharp_ratio_index)
+        print('예상 수익률 : %.3f' % (profit_max_SR * 100))
+        print('예상 변동성 : %.3f' % (vol_max_SR * 100))
+        print('Sharp Ratio : %.3f' % data['Sharp_Ratio'].max())
 
         plt.savefig('sharp_simulate')
-        ## plt.show()
+        plt.show()
 
 
 ## 시뮬레이션 기반으로 젠포트 포트폴리오별 자산배분
 class run_backtest():
-
 
     ## 필요한 것들 준비
     def __init__(self):
@@ -268,13 +259,19 @@ class run_backtest():
 ## 테스트
 if __name__=="__main__":
     Opt_portfolio = Opt_portfolio()
+    portfolio_list = input("포트폴리오 입력 :")
+    
+    Opt_portfolio.read_portfolio(portfolio_list)
+
     processd_data = Opt_portfolio.preprocess_tradedata()
     simulated_data = Opt_portfolio.random_portfolio_weight(processd_data)
     Opt_portfolio.draw_graph_sharp_ratio(simulated_data)
 
+    '''
     Show_portfolio = run_backtest()
     growth_data = Show_portfolio.process_trade_data(simulated_data)
     Show_portfolio.draw_graph(growth_data)
+    '''
     '''
     현재 
     '''
