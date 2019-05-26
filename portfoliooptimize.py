@@ -224,7 +224,7 @@ class run_backtest():
 
         plt.tight_layout()
         plt.grid(True)
-        plt.savefig('Genport Curve and MDD Simulation-'+png_ext+'Portfolio.png')
+        plt.savefig('Genport_Curve_and_MDD_Simulation-'+png_ext+'png')
 
         plt.show()
 
