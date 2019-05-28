@@ -13,7 +13,7 @@ import pandas as pd
 from numba import jit
 
 ## 포트폴리오 최적화
-class Opt_portfolio():
+class set_pf_weight():
 
     ## 준비
     def __init__(self):
@@ -22,9 +22,9 @@ class Opt_portfolio():
 
 
     ## 시뮬레이션 위한 포트폴리오 입력
-    def read_portfolio(self, *portfolio_number):      
-        self.pf_list = list(portfolio_number)[0].split()
-        return len(self.pf_list)
+    def read_pf(self, *pf_number):      
+        self.pf_list = list(pf_number)[0].split()
+        return self.pf_list
 
 
     ## 수익률 데이터 전처리
@@ -34,8 +34,8 @@ class Opt_portfolio():
        
         ## store amount data to dataframe
         for i in range(len(self.pf_list)):
-            portfolio_number = self.pf_list[i]
-            filepath = "trade_history_daily_" + portfolio_number + '.csv'
+            pf_number = self.pf_list[i]
+            filepath = "trade_history_daily_" + pf_number + '.csv'
             tradedata = pd.read_csv(filepath, header=0)
             temp['%s' %self.pf_list[i]] = tradedata['총자산'].astype(int)
         
@@ -46,7 +46,7 @@ class Opt_portfolio():
        
 
     ## 시뮬레이션
-    def random_portfolio_weight(self, data):
+    def get_random_pf_weight(self, data):
 
         ## set simulate time
         time = 2500
@@ -96,7 +96,7 @@ class Opt_portfolio():
 
     ## 결과 출력 어레이 작성
     def get_result(self, data):
-        data = simulated_data.sort_values(by='Sharp_Ratio', ascending=False)
+        data = data.sort_values(by='Sharp_Ratio', ascending=False)
         result_array = []
 
         ## 최대 Sharp Ratio에 따른 출력값 작성
@@ -106,7 +106,9 @@ class Opt_portfolio():
         sharp_ratio = round(profit_max_SR/vol_max_SR, 3)  ## 샤프비
 
         ## 결과 어레이에 저장
-        result_array.append(profit_max_SR, vol_max_SR, sharp_ratio)
+        result_array.append(profit_max_SR)
+        result_array.append(vol_max_SR)
+        result_array.append(sharp_ratio)
 
         ## 결과 어레이에 비중 저장
         for i in self.pf_list:
@@ -119,7 +121,7 @@ class Opt_portfolio():
     
     ## 그래프 작도
     def draw_graph_sharp_ratio(self, data):
-        data = simulated_data.sort_values(by='Sharp_Ratio', ascending=False)
+        data = data.sort_values(by='Sharp_Ratio', ascending=False)
 
         ## 그래프 작도
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(13,6), sharex=True)
@@ -132,28 +134,33 @@ class Opt_portfolio():
                   
         ## 최대 Sharp ratio일때 Vol, Profit 출력
         plt.scatter(vol_max_SR, profit_max_SR, c='Blue', marker='*', s=200)
-        plt.title('[GenPort]Strategy Portfolio Simulation')
 
         ## PNG로 출력
         plt.savefig('sharp_simulate')
 
 
 ## 시뮬레이션 기반으로 젠포트 포트폴리오별 자산배분
-class run_backtest():
+class simulate_amount_graph():
 
-    ## 포트폴리오 넘버 리스트, 시뮬레이션 결과 데이터
-    def __init__(self, pf_list, opt_data):
-        self.pf_list = list(pf_list.split())
-        self.count = len(pf_list)
-        self.opt_data = opt_data 
+    ## 준비
+    def __init__(self):
+        ## 포트폴리오의 Number를 입력받아 Array Type로 저장
+        self.pf_list = []
         self.fee = 0.00015  # 수수료 0.015% (키움증권)
 
-    ## 수익률 데이터 전처리
-    def preprocess_tradedata(self):
+
+    ## 시뮬레이션 위한 포트폴리오 입력
+    def read_pf(self, *pf_number):      
+        self.pf_list = list(pf_number)[0].split()
+        return len(self.pf_list)
+
+
+    ## 수익률 데이터 전처리(In : opt_data)
+    def preprocess_tradedata(self, opt_data):
         ## empty data to store preprocessd data
         ## 날짜 - 각 PF별 누적수익 - 비중조절후 합한 누적수익
         temp_df = pd.DataFrame()
-        max_sharp_ratio_area = self.opt_data['Sharp_Ratio'].idxmax()
+        max_sharp_ratio_area = opt_data['Sharp_Ratio'].idxmax()
 
         filepath = "trade_history_daily_" + self.pf_list[0] + '.csv'
         raw_data = pd.read_csv(filepath, header=0)
@@ -169,7 +176,7 @@ class run_backtest():
 
         ## 전체 수익 저장
         for i in self.pf_list:
-            weight_temp = self.opt_data.iloc[max_sharp_ratio_area].loc['weights_%s' %i] 
+            weight_temp = opt_data.iloc[max_sharp_ratio_area].loc['weights_%s' %i] 
             temp_df['누적수익률_Opt'] = (temp_df['누적수익률_%s' %i] * weight_temp) + temp_df['누적수익률_Opt']
 
         temp_df['누적수익률'] = temp_df['누적수익률_Opt'].astype(float)/100+1.0
@@ -198,7 +205,7 @@ class run_backtest():
 
         xtick_interval = 20 ## 20거래일 가로축
         plt.rcParams["figure.figsize"] = (14,7)
-        png_ext = 'portfolio'
+        png_ext = 'pf'
     
         plt.subplot(2,1,1) # row, column, index
         plt.yscale('log') # y-axis log scale
@@ -208,7 +215,7 @@ class run_backtest():
         plt.ylabel('[Cumulative Return]')
         plt.legend(["Simulate CAGR : %.2f %%" %CAGR, "newHigh"])
         plt.xticks(np.arange(min(temp_df.index), max(temp_df.index) + 1, xtick_interval))
-        plt.title('[GenPort]Strategy Portfolio Simulation - Cumulative Return')
+        plt.title('[GenPort]Strategy pf Simulation - Cumulative Return')
         plt.grid(True)
 
         plt.subplot(2, 1, 2)
@@ -218,7 +225,7 @@ class run_backtest():
         plt.ylabel('[DrawDown]')
         plt.legend(["DD", "MDD : %.2f %%" %MDD])
         plt.xticks(np.arange(min(temp_df.index), max(temp_df.index) + 1, xtick_interval))
-        plt.title('[GenPort]Strategy Portfolio Simulation - MDD')
+        plt.title('[GenPort]Strategy pf Simulation - MDD')
 
         plt.tight_layout()
         plt.grid(True)
@@ -226,14 +233,13 @@ class run_backtest():
 
 
     ## 성과 저장
-    def show_result(self, temp_df):
+    def get_result(self, temp_df):
         d1 = str(temp_df['날짜'].iloc[0]) # 거래시작일
         d11 = datetime.strptime(d1, "%Y%m%d")
         d2 = str(temp_df['날짜'].iloc[-1]) # 거래종료일
         d22 = datetime.strptime(d2, "%Y%m%d")
         delta = d22-d11
-        delta_days = delta.days
-        period = delta_days/252 # 투자기간(년)
+        period = (delta.days)/252 # 투자기간(년)
 
         ## CAGR, MDD 계산
         CAGR = round(temp_df['누적수익률'].iloc[-1] ** (1/period) * 100 - 100, 2)
@@ -241,25 +247,27 @@ class run_backtest():
          
         ## 결과 저장용 어레이에 저장
         result_array = []
-        result_array.append(CAGR, MDD)
+        result_array.append(CAGR)
+        result_array.append(MDD)
         
         return result_array
 
-
+'''
 ## 테스트
 if __name__=="__main__":
-    Opt_portfolio = Opt_portfolio()
+    Opt_pf = Opt_pf()
     pf_list = input("포트폴리오 입력 :")
     
-    Opt_portfolio.read_portfolio(pf_list)
+    Opt_pf.read_pf(pf_list)
 
     ## 최대 샤프비중 시뮬레이션
-    processd_data = Opt_portfolio.preprocess_tradedata()
-    simulated_data = Opt_portfolio.random_portfolio_weight(processd_data)
-    Opt_portfolio.draw_graph_sharp_ratio(simulated_data)
+    processd_data = Opt_pf.preprocess_tradedata()
+    simulated_data = Opt_pf.random_pf_weight(processd_data)
+    Opt_pf.draw_graph_sharp_ratio(simulated_data)
 
     ## 포트폴리오 비중 배분 후 수익률 및 MDD Graph 시현
-    Show_portfolio = run_backtest(pf_list, simulated_data)
-    growth_data = Show_portfolio.preprocess_tradedata()
-    Show_portfolio.draw_graph(growth_data)
-    Show_portfolio.show_result(growth_data)
+    Show_pf = run_backtest(pf_list, simulated_data)
+    growth_data = Show_pf.preprocess_tradedata()
+    Show_pf.draw_graph(growth_data)
+    Show_pf.show_result(growth_data)
+'''
