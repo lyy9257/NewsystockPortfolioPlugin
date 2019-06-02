@@ -252,22 +252,4 @@ class simulate_amount_graph():
         
         return result_array
 
-'''
-## 테스트
-if __name__=="__main__":
-    Opt_pf = Opt_pf()
-    pf_list = input("포트폴리오 입력 :")
-    
-    Opt_pf.read_pf(pf_list)
-
-    ## 최대 샤프비중 시뮬레이션
-    processd_data = Opt_pf.preprocess_tradedata()
-    simulated_data = Opt_pf.random_pf_weight(processd_data)
-    Opt_pf.draw_graph_sharp_ratio(simulated_data)
-
-    ## 포트폴리오 비중 배분 후 수익률 및 MDD Graph 시현
-    Show_pf = run_backtest(pf_list, simulated_data)
-    growth_data = Show_pf.preprocess_tradedata()
-    Show_pf.draw_graph(growth_data)
-    Show_pf.show_result(growth_data)
-'''
+ 
