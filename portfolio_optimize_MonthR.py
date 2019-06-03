@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pandas as pd
+import sqlite3
 
 '''
 데이터 전처리 class
@@ -9,15 +10,19 @@ Output : Processed data(DB file for SQLite3)
 '''
 
 class preprocess_data():
+
+    ## 준비
     def __init__(self):
         self.pf_list = []
         self.temp = pd.DataFrame()
+
 
     ## 포트폴리오 리스트로 변환
     def read_pf_list(self, *pf_number):      
         self.pf_list = list(pf_number)[0].split()
         return self.pf_list
     
+
     ## 수익률 데이터 호출 후 합병
     def import_data(self):
         
@@ -32,16 +37,21 @@ class preprocess_data():
             tradedata = pd.read_csv(filepath, header=0)
             self.temp['%s_profit' %pf_num] = tradedata['일일수익률'].astype(float)
             self.temp['%s_amount' %pf_num] = tradedata['총자산'].astype(int)
-        
-        print(self.temp)     
+           
         return self.temp
    
+
     ## SQLite3 Database 데이터로 저장
     def store_data(self):
-        con = sqlite3.connect("/profit_data.db")
-        self.temp.to_sql('profit_data', con)
+        try:
+            con = sqlite3.connect("profit_data.db")
+            self.temp.to_sql('profit_data', con)
+            print("Store")
+        except:
+            print("Already Stored")
+            
+        return True
 
-        return true
 
 '''
 샤프비 시뮬레이션 class
@@ -49,34 +59,50 @@ Input : Portfolio list(str)
         Preprocessed data(SQLite3 DB File)
 Output : weight(Dataframe)
 '''
-
 class sharp_simulation():
-    ## 데이터베이스 연결 및 포트폴리오 리스트 수령
+    
     def __init__(self):
-        self.con = sqlite3.connect("/profit_data.db")
+        self.con = sqlite3.connect("/profit_data.db")3
+        self.data = pd.read_sql("SELECT * FROM profit_data", self.con, index_col=None)
         self.pf_list = []
+        self.month_list = []
+        self.column_list = []
+    
 
-    ## 포트폴리오 리스트 형변환(str to list)
+    '''
+    포트폴리오 리딩 함수
+    입력 : 포트폴리오 리스트(str)
+    출력 : 포트폴리오 리스트(list)
+    '''
     def read_pf_list(self, *pf_number):      
         self.pf_list = list(pf_number)[0].split()
         return self.pf_list
+    
 
-    ## 데이터 로드
+    '''
+    데이터 로딩 함수
+    입력 : 수익률 데이터
+    출력 : 시뮬레이션 결과 데이터
+    '''
     def load_data(self):
-        data = pd.read_sql("SELECT * FROM profit_data", self.con, index_col=None)
+        self.month_list = self.data['date'].drop_duplicates()
 
-    ## 시뮬레이션
+
+    '''
+    시뮬레이션 함수
+    입력 : 수익률 데이터
+    출력 : 시뮬레이션 결과 데이터
+    '''
     def simulation(self, data):
         ## set simulate time
         time = 2500
-        columns_list = []
-
+        
         for i in self.pf_list:
-            columns_list.append('weights_%s' %i)
+            self.columns_list.append('weights_%s' %i)
 
-        columns_list.append('profit')
-        columns_list.append('vollity')
-        columns_list.append('Sharp_Ratio')
+        self.columns_list.append('profit')
+        self.columns_list.append('vollity')
+        self.columns_list.append('Sharp_Ratio')
 
         '''
         포트폴리오 데이터셋이 N(1<N<6)이므로
@@ -97,7 +123,7 @@ class sharp_simulation():
             for i in range(len(weight)):
                 temp_array.append(weight[i])
                 
-            profits = np.sum((data.mean() * weight) * 252
+            profits = np.sum((data.mean() * weight) * 252)
             vols = np.sqrt(np.dot(weight.T, np.dot(data.cov() * 252, weight)))
             sharps = profits/vols
 
@@ -107,13 +133,18 @@ class sharp_simulation():
             
             dataframe_array.append(temp_array)
 
-        simulated_data = pd.DataFrame(dataframe_array, columns = columns_list)
+        simulated_data = pd.DataFrame(dataframe_array, columns = self.columns_list)
 
         ## 데이터 리턴
         return simulated_data
 
-    ## 최대값 결과 출력
-    def get_result(self, data):
+
+    '''
+    최대값 출력 함수
+    입력 : 시뮬레이션 데이터(Dataframe)
+    출력 : 시뮬레이션 최대값(list)
+    ''''
+    def get_max_result(self, data):
         data = data.sort_values(by='Sharp_Ratio', ascending=False)
         result_array = []
 
@@ -136,13 +167,32 @@ class sharp_simulation():
         ## 어레이 리턴(수익률 - 변동성 - 샤프비 - 각 포트별 비중)
         return result_array
 
-    def save_profit_data(self):
-        profit_data = pd.DataFrame()
 
-        
+    '''
+    수익률 데이터 저장 함수
+    입력 : 수익률(list)
+    출력 : 시뮬레이션 결과 데이터
+    '''
+    def save_profit_data(self, result_array):
+        profit_data = pd.DataFrame()
+        self.load_date()
+
+        for i in self.month_list():
+            ## 해당 월 데이터 추출
+            sim_raw_data = self.simulation(data)
+            
+class draw_graph():
+
+    def __init__(self):
+
+        return 0
+     
 if __name__ == '__main__':
     pf_list = '536928 549289 556120 566420 586167'
     preprocess_data = preprocess_data()
     preprocess_data.read_pf_list(pf_list)
     preprocess_data.import_data()
+    preprocess_data.store_data()
+
+
     
