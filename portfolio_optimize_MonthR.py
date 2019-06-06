@@ -60,9 +60,9 @@ Input : Portfolio list(str)
 Output : weight(Dataframe)
 '''
 class sharp_simulation():
-    
+     
     def __init__(self):
-        self.con = sqlite3.connect("/profit_data.db")3
+        self.con = sqlite3.connect("/profit_data.db")
         self.data = pd.read_sql("SELECT * FROM profit_data", self.con, index_col=None)
         self.pf_list = []
         self.month_list = []
@@ -180,6 +180,7 @@ class sharp_simulation():
         for i in self.month_list():
             ## 해당 월 데이터 추출
             sim_raw_data = self.simulation(data)
+            sim_max_data = self.get_max_result(sim_raw_data)
             
 class draw_graph():
 
