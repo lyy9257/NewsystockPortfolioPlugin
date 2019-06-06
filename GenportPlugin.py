@@ -6,16 +6,15 @@ from PyQt5.QtGui import QPixmap
 
 import time
 
-import portfolio_optimize
+import handler
 
 class Form(QtWidgets.QDialog):
     def __init__(self, parent=None):
         QtWidgets.QDialog.__init__(self, parent)
         self.ui = uic.loadUi("front.ui", self)
 
-        self.sharp_simulate = portfolio_optimize.set_pf_weight()
-        self.predict_amount = portfolio_optimize.simulate_amount_graph()
-        
+        self.simulation_onetime = handler.onetime_sharp_simulation()
+       
         ## 시뮬레이션 버튼
         self.StartSimulation.clicked.connect(self.simulation)
     
@@ -31,24 +30,23 @@ class Form(QtWidgets.QDialog):
         pf_str = self.ReadPFlist.text()
         
         ## 포트폴리오 갯수 출력
-        pf_list = self.sharp_simulate.read_pf(pf_str)
-
+        pf_list = self.simulation_onetime.get_pf_list(pf_str)
+        
         if len(pf_list) < 6:
             self.ShowPFAmount.setText(str(len(pf_list)))
-        
+            
+            ## 데이터 전처리
+            self.simulation_onetime.preprocess_data()
+
             ## 샤프비 시뮬레이션
-            processd_data = self.sharp_simulate.preprocess_tradedata()
-            simulated_data = self.sharp_simulate.get_random_pf_weight(processd_data)
-            self.sharp_simulate.draw_graph_sharp_ratio(simulated_data)
+            self.simulation_onetime.simulate()
         
-            ## 수익률 커브 시뮬레이션
-            self.predict_amount.read_pf(pf_str)
-            processed_tradedata = self.predict_amount.preprocess_tradedata(simulated_data)
-            self.predict_amount.draw_graph(processed_tradedata)
+            ## 그래프 작도
+            self.simulation_onetime.draw_graph()
 
             ## 성과 출력
-            result_sharp = self.sharp_simulate.get_result(simulated_data) 
-            result_account = self.predict_amount.get_result(processed_tradedata)
+            result_sharp = self.simulation_onetime.get_sharp_result()
+            result_cagr = self.simulation_onetime.get_cagr_result()
 
             self.resultlogbox.insertPlainText("[시뮬레이션 결과] \n")
             self.resultlogbox.insertPlainText("예상 수익률 : %.3f %% \n" %(result_sharp[0] * 100))
@@ -58,8 +56,8 @@ class Form(QtWidgets.QDialog):
             for k in range(len(pf_list)):
                 self.resultlogbox.insertPlainText("%s 포트 비중 : %.3f %% \n" %(pf_list[k], result_sharp[k+3] * 100))
 
-            self.resultlogbox.insertPlainText("\n예상 CAGR : %.3f %%\n" %result_account[0]) 
-            self.resultlogbox.insertPlainText("예상 MDD : %.3f %%\n\n" %result_account[1])   
+            self.resultlogbox.insertPlainText("\n예상 CAGR : %.3f %%\n" %result_cagr[0]) 
+            self.resultlogbox.insertPlainText("예상 MDD : %.3f %%\n\n" %result_cagr[1])   
 
             return True
     
