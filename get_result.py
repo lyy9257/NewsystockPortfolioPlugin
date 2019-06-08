@@ -7,7 +7,6 @@ CAGR, MDD 출력 함수
 '''
 
 def cagr_mdd(data):
-    print(data)
     d1 = str(data['날짜'].iloc[0]) # 거래시작일
     d11 = datetime.strptime(d1, "%Y%m%d")
     d2 = str(data['날짜'].iloc[-1]) # 거래종료일

@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import sqlite3
+import multiprocessing as multi
+import time
 
 '''
 포트폴리오 리딩 함수
@@ -15,15 +17,18 @@ def read_pf_list(*pf_number):
 
 '''
 시뮬레이션 함수
-입력 : 수익률 데이터
+입력 : 포트폴리오 리스트, 로그수익률 데이터프레임
 출력 : 시뮬레이션 결과 데이터
-* 멀티프로세싱 가능하게 패치 예정입니다.
+* 멀티프로세싱으로 500 * 4회 시뮬레이션 실시
 '''
 
-def simulation(pf_list, data):
+def simulation(multi_map):
 
     ## set simulate time
-    time = 2500
+    time = 500
+    pf_list = multi_map[0]
+    data = multi_map[1]
+
     columns_list = []
 
     for i in pf_list:
@@ -59,7 +64,6 @@ def simulation(pf_list, data):
         temp_array.append(profits)
         temp_array.append(vols)
         temp_array.append(sharps)
-        print(temp_array)
         
         dataframe_array.append(temp_array)
 
@@ -68,6 +72,17 @@ def simulation(pf_list, data):
     ## 데이터 리턴
     return simulated_data
 
+
+def simulation_multi(pf_list, data):
+    start_time = time.time()
+
+    data_map = [[pf_list, data], [pf_list, data], [pf_list, data], [pf_list, data]]
+    pool = multi.Pool(processes = 4) # 4개의 프로세스
+    simulated_data = pd.concat(pool.map(simulation, data_map)) # 실시
+    
+    print("시뮬레이션 시간 : %.3f seconds" % (time.time() - start_time))
+    print(simulated_data)
+    return simulated_data
 
 '''
 수익률 데이터 저장 함수

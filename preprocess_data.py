@@ -52,17 +52,24 @@ def import_account_data(pf_list):
     return temp
    
 
-## SQLite3 Database 데이터로 저장
-def store_data(profit_data, account_data):
-    con = sqlite3.connect("profit_data.db")
-    profit_data.to_sql('profit_data', con)
-    account_data.to_sql('account_data', con)
-    print("Store")         
-    return True
+## 월 데이터 호출
+def get_month_data(pf_list):
+    
+    ## Make Empty DataFrame to store data
+    temp = pd.Series()
 
-## 수익률 데이터 전처리
+    ## store month data
+    filepath = "trade_history_daily_" + pf_list[0] + '.csv'    
+    tradedata = pd.read_csv(filepath, header=0)
+    temp = tradedata['날짜'].astype(str).str.slice(stop=6).drop_duplicates()
+    
+    temp = np.array(temp)
+
+    return temp
+
+
+## 수익률 데이터 로그화
 def profit_to_log(pf_list):
-
     ## empty data to store preprocessd data
     temp= pd.DataFrame()
        
@@ -77,6 +84,7 @@ def profit_to_log(pf_list):
     temp = np.log(temp/temp.shift(1))
 
     return temp
+
 
 ## 수익률 데이터 전처리
 def preprocess_trade_data(pf_list, data):
@@ -113,8 +121,17 @@ def preprocess_trade_data(pf_list, data):
     return df
 
 
+## SQLite3 Database 데이터로 저장
+def store_data(profit_data, account_data):
+    con = sqlite3.connect("profit_data.db")
+    profit_data.to_sql('profit_data', con)
+    account_data.to_sql('account_data', con)
+    print("Store")         
+    return True
+
+
 ## Module Test
 if __name__ == '__main__':
     pf = '536928 549289 556120 566420 586167'
     pf_list = read_pf_list(pf)
-    store_data(import_data(pf_list))
+    get_month_data(pf_list)

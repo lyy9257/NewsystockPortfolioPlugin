@@ -25,7 +25,7 @@ class Form(QtWidgets.QDialog):
 
     ## 샤프 시뮬레이션 버튼 클릭시 작동
     def simulation(self):
-
+        
         ## 입력 포트폴리오 번호 확인
         pf_str = self.ReadPFlist.text()
         
