@@ -1,4 +1,5 @@
-# coding=utf-8
+#-*- coding:utf-8 -*-
+
 import sys
 from PyQt5 import QtWidgets
 from PyQt5 import uic
@@ -14,18 +15,36 @@ class Form(QtWidgets.QDialog):
         self.ui = uic.loadUi("front.ui", self)
 
         self.simulation_onetime = handler.onetime_sharp_simulation()
-       
-        ## 시뮬레이션 버튼
-        self.StartSimulation.clicked.connect(self.simulation)
+        self.simulation_month = handler.month_sharp_simulation()
+        
+        '''
+        단독 시뮬레이션 키 커넥트
+        '''
+             
+        ## 시뮬레이션 버튼_단독
+        self.StartSimulation.clicked.connect(self.onetime_connect)
     
-        ## 그래프 출력 버튼
+        ## 그래프 출력 버튼_단독
         self.ShowSharpGraph.clicked.connect(self.show_graph_sharp_simulation)
         self.ShowEquityCurve.clicked.connect(self.show_graph_asset_growth)
+
+        '''
+        월별 시뮬레이션 키 커넥트
+        '''
+
+        ## 시뮬레이션 버튼_월별
+        self.StartSimulation_month.clicked.connect(self.month_connect)
     
+        ## 그래프 출력 버튼_월별
+        self.ShowEquityCurve_month.clicked.connect(self.show_graph_asset_growth_month)
+    
+    '''
+    단독 시뮬레이션
+    '''
 
     ## 샤프 시뮬레이션 버튼 클릭시 작동
-    def simulation(self):
-        
+    def onetime_connect(self):
+
         ## 입력 포트폴리오 번호 확인
         pf_str = self.ReadPFlist.text()
         
@@ -33,15 +52,19 @@ class Form(QtWidgets.QDialog):
         pf_list = self.simulation_onetime.get_pf_list(pf_str)
         
         if len(pf_list) < 6:
+            print('\n(1/4) Get Portfolio list...')
             self.ShowPFAmount.setText(str(len(pf_list)))
             
             ## 데이터 전처리
+            print('(2/4) Preprocessing Portfolio Data...')
             self.simulation_onetime.preprocess_data()
 
             ## 샤프비 시뮬레이션
+            print('(3/4) Simulation...')
             self.simulation_onetime.simulate()
         
             ## 그래프 작도
+            print('(4/4) Drawing Graph...')
             self.simulation_onetime.draw_graph()
 
             ## 성과 출력
@@ -75,10 +98,63 @@ class Form(QtWidgets.QDialog):
     
     ## 수익률 커브 그래프 출력
     def show_graph_asset_growth(self):
-        pixmap = QPixmap("Genport_Curve_and_MDD_Simulation")
+        pixmap = QPixmap("Genport_Curve_and_MDD_Simulation.png")
         pixmap = pixmap.scaledToWidth(700)
             
         self.ShowGraphImage.setPixmap(pixmap)
+
+    '''
+    월별 시뮬레이션
+    '''
+
+    ## 샤프 시뮬레이션 버튼 클릭시 작동
+    def month_connect(self):
+        
+        ## 입력 포트폴리오 번호 확인
+        pf_str = self.ReadPFlist_month.text()
+        
+        ## 포트폴리오 갯수 출력
+        pf_list = self.simulation_month.get_pf_list(pf_str)
+        
+        if len(pf_list) < 6:
+            print('\n(1/4) Get Portfolio list...')
+            self.ShowPFAmount_month.setText(str(len(pf_list)))
+
+            ## 데이터 전처리
+            print('(2/4) Preprocessing Portfolio Data...')
+            self.simulation_month.preprocess_data()
+            
+            ## 샤프비 시뮬레이션
+            print('(3/4) Simulation...')
+            self.simulation_month.simulate_()
+            
+            ## 그래프 작도
+            print('(4/4) Drawing Graph...')
+            self.simulation_month.draw_graph()
+
+            ## 성과 출력
+            result_cagr = self.simulation_month.get_cagr_result()
+
+            self.resultlogbox_month.insertPlainText("[시뮬레이션 결과] \n")
+
+            self.resultlogbox_month.insertPlainText("\n예상 CAGR : %.3f %%\n" %result_cagr[0]) 
+            self.resultlogbox_month.insertPlainText("예상 MDD : %.3f %%\n\n" %result_cagr[1])   
+
+            self.resultlogbox_month.insertPlainText("[월별 비중파일이 CSV파일로 저장되었습니다.] \n")
+            
+            return True
+            
+        else:
+            self.ShowPFAmount_month.setText("포트 갯수 초과")
+            return False
+    
+
+    ## 수익률 커브 그래프 출력
+    def show_graph_asset_growth_month(self):
+        pixmap = QPixmap("Genport_Curve_and_MDD_Simulation.png")
+        pixmap = pixmap.scaledToWidth(700)
+            
+        self.ShowGraphImage_month.setPixmap(pixmap)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+#-*- coding:utf-8 -*-
+
 '''
 데이터 전처리 모듈
 '''
@@ -10,6 +12,14 @@ import sqlite3
 def read_pf_list(*pf_number):      
     pf_list = list(pf_number)[0].split()
     return pf_list
+
+
+## 엑셀 데이터 엑세스
+def excess_csv_data(pf_num):
+    filepath = "trade_history_daily_" + pf_num + '.csv'    
+    tradedata = pd.read_csv(filepath, header=0)
+    
+    return tradedata
     
 
 ## 수익률 데이터 호출 후 합병
@@ -17,16 +27,13 @@ def import_profit_data(pf_list):
     
     ## Make Empty DataFrame to store data
     temp = pd.DataFrame()
-
-    ## store month data
-    filepath = "trade_history_daily_" + pf_list[0] + '.csv'    
-    tradedata = pd.read_csv(filepath, header=0)
+    tradedata = excess_csv_data(pf_list[0])
     temp['date'] = tradedata['날짜'].astype(int)
-    temp['YearMonth'] = tradedata['날짜'].astype(str).str.slice(stop=6)
+    temp['YearMonth'] = temp['date'].astype(str).str.slice(stop=6)
 
     ## store profit and amount data
     for pf_num in pf_list:
-        tradedata = pd.read_csv(filepath, header=0)
+        tradedata = excess_csv_data(pf_num)
         temp['%s_profit' %pf_num] = tradedata['일일수익률'].astype(float)
            
     return temp
@@ -38,15 +45,13 @@ def import_account_data(pf_list):
     ## Make Empty DataFrame to store data
     temp = pd.DataFrame()
 
-    ## store month data
-    filepath = "trade_history_daily_" + pf_list[0] + '.csv'    
-    tradedata = pd.read_csv(filepath, header=0)
+    tradedata = excess_csv_data(pf_list[0])
     temp['date'] = tradedata['날짜'].astype(int)
-    temp['YearMonth'] = tradedata['날짜'].astype(str).str.slice(stop=6)
+    temp['YearMonth'] = temp['date'].astype(str).str.slice(stop=6)
 
     ## store profit and amount data
     for pf_num in pf_list:
-        tradedata = pd.read_csv(filepath, header=0)
+        tradedata = excess_csv_data(pf_num)
         temp['%s_amount' %pf_num] = tradedata['총자산'].astype(int)
            
     return temp
@@ -59,8 +64,7 @@ def get_month_data(pf_list):
     temp = pd.Series()
 
     ## store month data
-    filepath = "trade_history_daily_" + pf_list[0] + '.csv'    
-    tradedata = pd.read_csv(filepath, header=0)
+    tradedata = excess_csv_data(pf_list[0])
     temp = tradedata['날짜'].astype(str).str.slice(stop=6).drop_duplicates()
     
     temp = np.array(temp)
@@ -70,15 +74,14 @@ def get_month_data(pf_list):
 
 ## 수익률 데이터 로그화
 def profit_to_log(pf_list):
+
     ## empty data to store preprocessd data
     temp= pd.DataFrame()
        
     ## store amount data to dataframe
-    for i in range(len(pf_list)):
-        pf_number = pf_list[i]
-        filepath = "trade_history_daily_" + pf_number + '.csv'
-        tradedata = pd.read_csv(filepath, header=0)
-        temp['%s' %pf_list[i]] = tradedata['총자산'].astype(int)
+    for num in pf_list:
+        tradedata = excess_csv_data(num)
+        temp['%s' %num] = tradedata['총자산'].astype(int)
         
     ## calculate profit data
     temp = np.log(temp/temp.shift(1))
@@ -86,8 +89,59 @@ def profit_to_log(pf_list):
     return temp
 
 
+## 월별 수익률 배분
+def trade_data_month(pf_list, month_list, weight_data):
+    
+    ## 여기서부터 
+    profit_data = pd.DataFrame()
+
+    raw_data = excess_csv_data(pf_list[0])
+    profit_data['날짜'] = raw_data['날짜']
+    profit_data['YearMonth'] = profit_data['날짜'].astype(str).str.slice(stop=6)
+    
+    temp = pd.DataFrame()
+
+    ## 누적 수익 저장
+    for num in pf_list:
+        tradedata = excess_csv_data(num)
+        profit_data['일일수익률_%s' %num] = tradedata['일일수익률'].div(100).astype(float)
+    
+    ## 여기까지 독립화 예정
+
+    ## 전체 수익 저장
+    for num in month_list:
+        profit_temp = profit_data[profit_data.YearMonth == num].drop(columns=['날짜', 'YearMonth'], axis = 1)
+        weight_temp = weight_data[weight_data.YearMonth == num].drop('YearMonth', axis = 1)
+        multiply_temp = pd.DataFrame(profit_temp.values * weight_temp.values, columns = pf_list)
+        temp = pd.concat([temp, multiply_temp.sum(axis=1)])
+
+    profit_data['일일수익률_Opt'] = temp.reset_index(drop=True)
+    profit_data['누적수익률'] = (np.cumprod(1 + profit_data['일일수익률_Opt'].values))
+   
+    profit_data['최고누적'] = profit_data['누적수익률'].rolling(min_periods = 1, window = len(profit_data.index)).max()
+    profit_data['DD'] = profit_data['누적수익률'] / profit_data['최고누적'] - 1
+    profit_data['MDD'] = profit_data['DD'].rolling(min_periods = 1, window = len(profit_data.index)).min()
+ 
+    for num in pf_list:
+        profit_data.drop(columns ='일일수익률_%s' %num)
+ 
+    try:
+        os.delete('weight.csv')
+        os.delete('result.csv')
+
+    except:
+        pass        
+
+    weight_data.to_csv('weight.csv', encoding='ms949') 
+    profit_data.to_csv('result.csv', encoding='ms949')  
+ 
+    return profit_data
+
+
+
 ## 수익률 데이터 전처리
-def preprocess_trade_data(pf_list, data):
+def trade_data(pf_list, data):
+
     ## empty data to store preprocessd data
     ## 날짜 - 각 PF별 누적수익 - 비중조절후 합한 누적수익
     df = pd.DataFrame()
@@ -97,14 +151,14 @@ def preprocess_trade_data(pf_list, data):
     raw_data = pd.read_csv(filepath, header=0)
     df['날짜'] = raw_data['날짜']
     df['누적수익률_Opt'] = 0.000
-        
+
     ## 누적 수익 저장
     for i in pf_list:
         pf_number = i
         filepath = "trade_history_daily_" + pf_number + '.csv'
         tradedata = pd.read_csv(filepath, header=0)
         df['누적수익률_%s' %i] = tradedata['누적수익률'].astype(float)
-
+        
     ## 전체 수익 저장
     for i in pf_list:
         weight_temp = data.iloc[max_sharp_ratio_area].loc['weights_%s' %i] 
@@ -129,9 +183,3 @@ def store_data(profit_data, account_data):
     print("Store")         
     return True
 
-
-## Module Test
-if __name__ == '__main__':
-    pf = '536928 549289 556120 566420 586167'
-    pf_list = read_pf_list(pf)
-    get_month_data(pf_list)
