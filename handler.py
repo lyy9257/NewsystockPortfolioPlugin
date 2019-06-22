@@ -68,6 +68,7 @@ class onetime_sharp_simulation():
 
         draw.sharp_ratio(self.sharp_data)
         draw.profit(self.profit_result_data, self.period)
+        draw.mdd(self.profit_result_data)
 
         return True
 
@@ -111,6 +112,7 @@ class month_sharp_simulation():
 
         self.period = 0
 
+
     def get_pf_list(self, pf_str):
         self.pf_list = preprocess.read_pf_list(pf_str)
         
@@ -134,7 +136,9 @@ class month_sharp_simulation():
     def draw_graph(self):
         self.profit_result_data = preprocess.trade_data_month(self.pf_list, self.month_list, self.weight_data)  
         self.period = get.period(self.profit_data) 
+
         draw.profit(self.profit_result_data, self.period)
+        draw.mdd(self.profit_result_data)
 
         return True
    

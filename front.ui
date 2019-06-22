@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -81,7 +81,7 @@
        <string>샤프비 시뮬레이션</string>
       </property>
      </widget>
-     <widget class="QRadioButton" name="ShowEquityCurve">
+     <widget class="QRadioButton" name="ShowCurve">
       <property name="geometry">
        <rect>
         <x>150</x>
@@ -347,7 +347,7 @@
      <property name="title">
       <string>그래프</string>
      </property>
-     <widget class="QRadioButton" name="ShowEquityCurve_month">
+     <widget class="QRadioButton" name="ShowCurve_month">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -410,6 +410,19 @@
       </property>
       <property name="indent">
        <number>-1</number>
+      </property>
+     </widget>
+     <widget class="QRadioButton" name="ShowMDD_month">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>20</y>
+        <width>130</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>MDD</string>
       </property>
      </widget>
     </widget>

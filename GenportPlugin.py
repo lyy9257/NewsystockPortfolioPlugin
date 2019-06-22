@@ -25,8 +25,9 @@ class Form(QtWidgets.QDialog):
         self.StartSimulation.clicked.connect(self.onetime_connect)
     
         ## 그래프 출력 버튼_단독
-        self.ShowSharpGraph.clicked.connect(self.show_graph_sharp_simulation)
-        self.ShowEquityCurve.clicked.connect(self.show_graph_asset_growth)
+        self.ShowSharpGraph.clicked.connect(self.show_sharp)
+        self.ShowCurve.clicked.connect(self.show_curve)
+        self.ShowMDD.clicked.connect(self.show_mdd)
 
         '''
         월별 시뮬레이션 키 커넥트
@@ -36,8 +37,10 @@ class Form(QtWidgets.QDialog):
         self.StartSimulation_month.clicked.connect(self.month_connect)
     
         ## 그래프 출력 버튼_월별
-        self.ShowEquityCurve_month.clicked.connect(self.show_graph_asset_growth_month)
-    
+        self.ShowCurve_month.clicked.connect(self.show_curve_month)
+        self.ShowMDD_month.clicked.connect(self.show_mdd_month)
+
+
     '''
     단독 시뮬레이션
     '''
@@ -52,7 +55,7 @@ class Form(QtWidgets.QDialog):
         pf_list = self.simulation_onetime.get_pf_list(pf_str)
         
         if len(pf_list) < 6:
-            print('\n(1/4) Get Portfolio list...')
+            print('(1/4) Get Portfolio list...')
             self.ShowPFAmount.setText(str(len(pf_list)))
             
             ## 데이터 전처리
@@ -64,7 +67,7 @@ class Form(QtWidgets.QDialog):
             self.simulation_onetime.simulate()
         
             ## 그래프 작도
-            print('(4/4) Drawing Graph...')
+            print('(4/4) Drawing Graph...\n')
             self.simulation_onetime.draw_graph()
 
             ## 성과 출력
@@ -72,8 +75,12 @@ class Form(QtWidgets.QDialog):
             result_cagr = self.simulation_onetime.get_cagr_result()
 
             self.resultlogbox.insertPlainText("[시뮬레이션 결과] \n")
-            self.resultlogbox.insertPlainText("예상 수익률 : %.3f %% \n" %(result_sharp[0] * 100))
-            self.resultlogbox.insertPlainText("예상 변동성 : %.3f %% \n" %(result_sharp[1] * 100))
+            
+            ## 사용자에게 혼란을 야기할 수 있어 예상 수익률 및 예상 변동성 출력 제거
+
+            ## self.resultlogbox.insertPlainText("예상 수익률 : %.3f %% \n" %(result_sharp[0] * 100))
+            ## self.resultlogbox.insertPlainText("예상 변동성 : %.3f %% \n" %(result_sharp[1] * 100))
+            
             self.resultlogbox.insertPlainText("예상 샤프비 : %.3f \n\n" %result_sharp[2])
 
             for k in range(len(pf_list)):
@@ -88,20 +95,30 @@ class Form(QtWidgets.QDialog):
             self.ShowPFAmount.setText("포트 갯수 초과")
             return False
 
+
     ## 샤프비 시뮬레이션 그래프 출력
-    def show_graph_sharp_simulation(self):
-        pixmap = QPixmap("sharp_simulate.png")
+    def show_sharp(self):
+        pixmap = QPixmap("Sharp_Simulate.png")
         pixmap = pixmap.scaledToWidth(700)
             
         self.ShowGraphImage.setPixmap(pixmap)
 
     
     ## 수익률 커브 그래프 출력
-    def show_graph_asset_growth(self):
-        pixmap = QPixmap("Genport_Curve_and_MDD_Simulation.png")
+    def show_curve(self):
+        pixmap = QPixmap("Genport_Curve_Simulation.png")
         pixmap = pixmap.scaledToWidth(700)
             
         self.ShowGraphImage.setPixmap(pixmap)
+
+
+    ## MDD 그래프 출력
+    def show_mdd(self):
+        pixmap = QPixmap("Genport_MDD_Simulation.png")
+        pixmap = pixmap.scaledToWidth(700)
+            
+        self.ShowGraphImage.setPixmap(pixmap)
+
 
     '''
     월별 시뮬레이션
@@ -117,7 +134,7 @@ class Form(QtWidgets.QDialog):
         pf_list = self.simulation_month.get_pf_list(pf_str)
         
         if len(pf_list) < 6:
-            print('\n(1/4) Get Portfolio list...')
+            print('(1/4) Get Portfolio list...')
             self.ShowPFAmount_month.setText(str(len(pf_list)))
 
             ## 데이터 전처리
@@ -129,7 +146,7 @@ class Form(QtWidgets.QDialog):
             self.simulation_month.simulate_()
             
             ## 그래프 작도
-            print('(4/4) Drawing Graph...')
+            print('(4/4) Drawing Graph...\n')
             self.simulation_month.draw_graph()
 
             ## 성과 출력
@@ -150,11 +167,20 @@ class Form(QtWidgets.QDialog):
     
 
     ## 수익률 커브 그래프 출력
-    def show_graph_asset_growth_month(self):
-        pixmap = QPixmap("Genport_Curve_and_MDD_Simulation.png")
+    def show_curve_month(self):
+        pixmap = QPixmap("Genport_Curve_Simulation.png")
         pixmap = pixmap.scaledToWidth(700)
             
         self.ShowGraphImage_month.setPixmap(pixmap)
+
+
+    ## MDD 그래프 출력
+    def show_mdd_month(self):
+        pixmap = QPixmap("Genport_MDD_Simulation.png")
+        pixmap = pixmap.scaledToWidth(700)
+            
+        self.ShowGraphImage_month.setPixmap(pixmap)
+
 
 
 if __name__ == "__main__":

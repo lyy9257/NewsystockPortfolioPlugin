@@ -13,14 +13,11 @@ import os
 '''
 
 def sharp_ratio(data):
-
     try:
-        os.delete('sharp_simulate.png')
+        os.delete('Sharp_Simulate.png')
 
     except:
         pass
-
-    data = data.sort_values(by='Sharp_Ratio', ascending=False)
 
     ## 그래프 작도
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(13,6), sharex=True)
@@ -33,9 +30,12 @@ def sharp_ratio(data):
                   
     ## 최대 Sharp ratio일때 Vol, Profit 출력
     plt.scatter(vol_max_SR, profit_max_SR, c='Blue', marker='*', s=200)
+    
+    ## 타이틀
+    plt.title('[GenPort]Portfolio Weight Optimize Simulation - Sharp Simulation')
 
     ## PNG로 출력
-    plt.savefig('sharp_simulate.png')
+    plt.savefig('Sharp_Simulate.png')
 
 
 '''
@@ -45,12 +45,11 @@ def sharp_ratio(data):
 def profit(data, period):
 
     try:
-        os.delete('Genport_Curve_and_MDD_Simulation.png')
+        os.delete('Genport_Curve_Simulation.png')
 
     except:
         pass
 
-    MDD = round(data['MDD'].min() * 100, 2)
     CAGR = round(data['누적수익률'].iloc[-1] ** (1/period) * 100 - 100, 2)
 
     ## 메모리 클리어링
@@ -61,29 +60,52 @@ def profit(data, period):
     plt.rcParams["figure.figsize"] = (14,7)
     png_ext = 'pf'
        
-    plt.subplot(2,1,1) # row, column, index
-    plt.yscale('log') # y-axis log scale
+    ## plt.subplot(2,1,1) # row, column, index
+    ## plt.yscale('log') # y-axis log scale
     plt.semilogy(data['누적수익률'], color='#1F77B4')
     plt.semilogy(data['최고누적'], color='#FF8D29')
     plt.xlabel('[Trading Day]')
     plt.ylabel('[Cumulative Return]')
-    plt.legend(["Simulate CAGR : %.2f %%" %CAGR, "newHigh"])
+    plt.legend(["Simulate CAGR : %.2f %%" %CAGR, "NewHigh"])
     plt.xticks(np.arange(min(data.index), max(data.index) + 1, xtick_interval))
-    plt.title('[GenPort]Strategy pf Simulation - Cumulative Return')
+    plt.title('[GenPort]Portfolio Weight Optimize Simulation - Profit')
+    plt.tight_layout() 
     plt.grid(True)
+    plt.savefig('Genport_Curve_Simulation.png')
 
-    plt.subplot(2, 1, 2)
+
+'''
+MDD Graph 작도
+'''
+
+def mdd(data):
+    try:
+        os.delete('Genport_MDD_Simulation.png')
+
+    except:
+        pass
+
+    MDD = round(data['MDD'].min() * 100, 2)
+
+    ## 메모리 클리어링
+    ## 2회이상 실시한 결과 그래프가 두번이상 작성되어 메모리클리어링
+    plt.clf()
+
+    xtick_interval = 20 ## 20거래일 가로축
+    plt.rcParams["figure.figsize"] = (14,7)
+    png_ext = 'pf'
+       
     plt.plot(data['DD'], color='#FF8D29')
     plt.plot(data['MDD'], color='#DA3F40')
     plt.xlabel('[Trading day]')
     plt.ylabel('[DrawDown]')
     plt.legend(["DD", "MDD : %.2f %%" %MDD])
     plt.xticks(np.arange(min(data.index), max(data.index) + 1, xtick_interval))
-    plt.title('[GenPort]Strategy pf Simulation - MDD')
+    plt.title('[GenPort]Portfolio Weight Optimize Simulation - MDD')
 
     plt.tight_layout()
     plt.grid(True)
-    plt.savefig('Genport_Curve_and_MDD_Simulation.png')
+    plt.savefig('Genport_MDD_Simulation.png')
 
 
 '''

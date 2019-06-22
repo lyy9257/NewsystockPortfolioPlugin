@@ -90,7 +90,8 @@ def simulation_multi(pf_list, data):
     data_map = [[pf_list, data], [pf_list, data], [pf_list, data], [pf_list, data]]
     pool = multi.Pool(processes = 4) # 4개의 프로세스
     simulated_data = pd.concat(pool.map(simulation, data_map)) # 실시
-    
+    pool.close()
+
     ## print("시뮬레이션 시간 : %.3f seconds" % (time.time() - start_time))
     return simulated_data
 
@@ -144,27 +145,3 @@ def simulation_month(pf_list, month_list, data):
     final_data = pd.DataFrame(temp, columns = columns_list)
     
     return final_data
-
-
-'''
-모듈 테스트용
-'''
-
-'''
-if __name__ == '__main__':
-    import draw_graph as draw
-
-    pf = '622324 615717 620241'
-
-    ## 월별 샤프비 비중 계산
-    pf_list = preprocess.read_pf_list(pf)
-    month_list = preprocess.get_month_data(pf_list)
-    log_profit_data = preprocess.profit_to_log(pf_list)
-    
-    ## 샤프비 비중 계산 후 시뮬레이션
-    weight_data = simulation_month(pf_list, month_list, log_profit_data)
-    profit_data = preprocess.trade_data_month(pf_list, month_list, weight_data)
-
-    ## 그래프 작도
-    draw.profit(profit_data)
-'''
