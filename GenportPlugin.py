@@ -143,7 +143,7 @@ class Form(QtWidgets.QDialog):
             
             ## 샤프비 시뮬레이션
             print('(3/4) Simulation...')
-            self.simulation_month.simulate_()
+            self.simulation_month.simulate()
             
             ## 그래프 작도
             print('(4/4) Drawing Graph...\n')

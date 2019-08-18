@@ -121,19 +121,23 @@ def trade_data_month(pf_list, month_list, weight_data):
     profit_data['최고누적'] = profit_data['누적수익률'].rolling(min_periods = 1, window = len(profit_data.index)).max()
     profit_data['DD'] = profit_data['누적수익률'] / profit_data['최고누적'] - 1
     profit_data['MDD'] = profit_data['DD'].rolling(min_periods = 1, window = len(profit_data.index)).min()
- 
+    profit_data['cummax'] = profit_data['누적수익률_Opt'].cummax()
+    profit_data['underwater'] = profit_data['누적수익률_Opt'] < profit_data['cummax']
+    
+    print(profit_data['cummax'])
+
     for num in pf_list:
         profit_data.drop(columns ='일일수익률_%s' %num)
  
     try:
-        os.delete('weight.csv')
-        os.delete('result.csv')
+        os.delete('weight_month.csv')
+        os.delete('result_month.csv')
 
     except:
         pass        
 
-    weight_data.to_csv('weight.csv', encoding='ms949') 
-    profit_data.to_csv('result.csv', encoding='ms949')  
+    weight_data.to_csv('weight_month.csv', encoding='ms949') 
+    profit_data.to_csv('result_month.csv', encoding='ms949')  
  
     return profit_data
 
@@ -172,8 +176,38 @@ def trade_data(pf_list, data):
     df['HL'] = np.where(df['DD']<0,-1,1)
     df['HLcount'] = (df.groupby((df['HL'] != df['HL'].shift(1)).cumsum()).cumcount()+1) * df['HL']
 
+    df['cummax'] = df['누적수익률'].cummax()
+    df['underwater'] = df['누적수익률'] < df['cummax']
+
+    ## csv 파일로 Export
+    try:
+        os.delete('result_onetime.csv')
+
+    except:
+        pass        
+
+    df.to_csv('result_onetime.csv', encoding='ms949')  
+ 
+    ## 수익률 데이터 반환
     return df
 
+
+def count_max_underwater(df):
+    temp = []
+
+    for i in range(len(df.index)):
+        if df["underwater"].iat[i] == "true":
+            if(i = 0):
+                temp.append(1)
+
+            else:
+                temp.append(temp(i-1))
+        else:
+            temp.append(0)
+
+    df["underwater_count"] = temp
+    
+    return df
 
 ## SQLite3 Database 데이터로 저장
 def store_data(profit_data, account_data):

@@ -5,8 +5,6 @@
 '''
 
 import pandas as pd
-import sqlite3
-import multiprocessing
 
 import preprocess_data as preprocess
 import sharp_simulate as sim
@@ -127,7 +125,7 @@ class month_sharp_simulation():
         return True
 
 
-    def simulate_(self):
+    def simulate(self):
         self.weight_data = sim.simulation_month(self.pf_list, self.month_list, self.log_profit_data)
 
         return True

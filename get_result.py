@@ -1,6 +1,8 @@
 #-*- coding:utf-8 -*-
 
 from datetime import datetime
+import numpy as np
+import pandas as pd
 
 '''
 투자 년수 산출 함수
@@ -80,3 +82,14 @@ def max_sharp(pf_list, data):
     return result_array
 
 
+'''
+언더워터 출력함수
+입력 : 시뮬레이션 데이터(Dataframe)
+출력 : 시뮬레이션 최대값(list)
+'''
+
+def underwater_period():
+    df['cummax'] = df['A'].cummax()
+    df['underwater'] = df['A'] < df['cummax']
+    print(df)
+    print('total:', df['underwater'].sum())
